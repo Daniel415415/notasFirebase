@@ -91,7 +91,11 @@ const hacer_peticion = async () => {
 					elemento_lista(
 						datoss[elemento].titulo,
                         datoss[elemento].fecha,
-                        datoss[elemento].descripcion,
+                        datoss[elemento].descripcion.length > 200
+						 	? datoss[elemento].descripcion.substr(0, 200) + ". . ."
+						 	: datoss[elemento].descripcion,
+						elemento,
+						"sin cat"
 						// elemento.dia_nota +
 						// 	" " +
 						// 	elemento.numero_dia_nota +
@@ -419,24 +423,25 @@ Lista.addEventListener("click", (e) => {
 		e.target.classList.contains("des") == false
 	) {
 		let ele = e.target;
-		// console.log(ele);
+		 
 		while (
 			ele.getAttribute("id") == undefined ||
 			ele.getAttribute("id") == "bar_cat" ||
 			ele.getAttribute("id") == "cont_herramientas"
 		) {
 			ele = ele.parentNode;
-			// console.log(ele);
+			//console.log(ele.id);
 		}
 
-		let nota = json_notas.find((obj) => obj.id_nota == ele.getAttribute("id"));
-		id_nota_seleccionada = nota.id_nota;
-		titulo.value = nota.titulo_nota;
+		let nota = Object.keys(json_notas).find((obj) => obj == ele.getAttribute("id"));
+        console.log(json_notas[nota]);
+		id_nota_seleccionada = nota;
+		titulo.value = json_notas[nota].titulo;
 		titulo.style.borderBottom = `2px solid ${
 			nota.color_cat == null ? "goldenrod" : nota.color_cat
 		}`;
-		descripcion.value = nota.descripcion_nota;
-		fecha.innerHTML = `<div id='dfecha'>${nota.dia_nota},${nota.numero_dia_nota} de ${nota.mes_nota} del ${nota.anyo_nota}</div>`;
+		descripcion.value = json_notas[nota].descripcion;
+		fecha.innerHTML = `<div id='dfecha'>${json_notas[nota].fecha}</div>`;
 		btn_guardar
 			.querySelector("i")
 			.classList.replace("fa-save", "fa-pencil-alt");

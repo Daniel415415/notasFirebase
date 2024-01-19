@@ -1,33 +1,7 @@
-var BaseUrl = document.querySelector("body").getAttribute("url");
 let lista_categorias = document.getElementById("lista_categorias");
 
-let obtener_categorias = async () => {
-	let respuesta = await fetch(BaseUrl + "inicio/obtener_categorias");
-	let categorias = await respuesta.json();
-	//console.log(categorias);
-	return categorias;
-};
 
-let llenar_categorias = async () => {
-	let ele_cat = document.querySelectorAll(".catele");
-	for (const iterator of ele_cat) {
-		lista_categorias.removeChild(iterator);
-	}
 
-	let categorias = await obtener_categorias();
-	for (const categoria of categorias) {
-		lista_categorias.insertAdjacentHTML(
-			"afterbegin",
-			`<li id="${categoria.id_cat}" class='catele'><a style="border-right: 20px solid ${categoria.color_cat};" class="dropdown-item" href="#" onclick="ver_categoria(${categoria.id_cat})"> ${categoria.nombre_cat}</a></li>`
-		);
-
-		///?agregar aqui la eliminacion de las categorias ya registradas en el DOM
-	}
-
-	
-};
-
-llenar_categorias();
 
 let ver_categoria = async (id_categoria) => {
 	let elemento_lista = (titulo, fecha, descripcion, id_nota, color_cat) => {
@@ -111,54 +85,40 @@ let ver_categoria = async (id_categoria) => {
 };
 
 let categorizar_nota = async (id_nota) => {
-	let categorias = await obtener_categorias();
-	let options =
-		'<option style="text-align:center;" value="0">Seleccione una categoria</option>';
-	for (const iterator of categorias) {
-		options += `<option value="${iterator.id_cat}" style="color:${iterator.color_cat}; font-weight:bold; text-align:center;" >${iterator.nombre_cat} </option>`;
-	}
+	
 
 	Swal.fire({
-		title: "Categorizar nota",
-		html: `<select id="categoria" class="form-control">
-    ${options}
-    </select>`,
+		title: 'Selecciona un color',
+		html: '<div style="width:-webkit-fill-available; height:80px;"><input style="width:-webkit-fill-available; height:80px;" type="color" id="swal-input-color" class=""></div>',
 		focusConfirm: false,
-		confirmButtonText: 'Agregar a categoria <i class="fa fa-thumbs-up"></i> ',
-		confirmButtonAriaLabel: "Thumbs up, great!",
 		preConfirm: () => {
-			return [document.getElementById("categoria").value];
-		},
-	}).then((result) => {
-		if (result.value && result.value != 0) {
-			let data = new FormData();
-			data.append("id_nota", id_nota);
-			data.append("id_categoria", result.value);
-
-			let respuesta = fetch(BaseUrl + "inicio/asignar_categoria", {
-				method: "POST", // or 'PUT'
-				body: data, // data can be `string` or {object}!
-				mode: "no-cors",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
-
-			tata.success("Realizado", "Nota categorizada", {
-				position: "tm",
-				animate: "slide",
-				duration: 2000,
-			});
-
-			for (const it of categorias) {
-				if (it.id_cat == result.value) {
-					document.getElementById(
-						id_nota
-					).childNodes[3].style.borderBottom = `2px solid ${it.color_cat}`;
-				}
-			}
+		  const color = document.getElementById('swal-input-color').value;
+		  return color;
 		}
-	});
+	  }).then((result) => {
+		if (result.isConfirmed && result.value) {
+		  const colorSeleccionado = result.value;
+		  // Lógica para actualizar en Firebase
+		  fetch(`https://bdtest-5ff29-default-rtdb.firebaseio.com/nombre_de_tu_coleccion/${id_nota}.json`, {
+			method: 'PATCH',
+			headers: {
+			  'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ color: colorSeleccionado })
+		  })
+		  .then(response => response.json())
+		  .then(data => {
+			Swal.fire(`Color actualizado a: ${colorSeleccionado}`);
+			document.getElementById(id_nota.toString()).childNodes[3].style.borderBottom = `2px solid ${colorSeleccionado}`
+		  })
+		  .catch(error => {
+			Swal.fire('Error', 'No se pudo actualizar el color', 'error');
+		  });
+		}
+	  });
+
+	 
+	
 };
 
 let = contenedor_colores = document.getElementById("contenedor_colores");
@@ -176,98 +136,6 @@ contenedor_colores.addEventListener("click", (e) => {
 	}
 });
 
-document.getElementById("guardar_cat").addEventListener("click", async () => {
-	let nombre_cat = document.getElementById("nombre_cat").value;
-	let color_cat =
-		document.getElementsByClassName("color_seleccionado")[0].style
-			.backgroundColor;
-	if (nombre_cat !== "") {
-		let data = new FormData();
-		data.append("nombre_cat", nombre_cat);
-		data.append("color_cat", color_cat);
 
-		let respuesta = await fetch(BaseUrl + "inicio/agregar_categoria", {
-			method: "POST", // or 'PUT'
-			body: data, // data can be `string` or {object}!
-			mode: "no-cors",
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-		if (respuesta.status === 200) {
-			tata.success("Realizado", "Se agrego la categoria", {
-				position: "tm",
-				animate: "slide",
-				duration: 2000,
-			});
 
-			llenar_categorias();
-			document.getElementById("cancelar_cat").click();
-		} else {
-			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Algo salio mal",
-			});
-		}
-	}
-	else{
-		tata.error("Error", "No se puede dejar el nombre vacio", {
-			position: "tm",
-			animate: "slide",
-			duration: 2000,
-		});
-	}
-});
 
-document.getElementById("eliminar_cat").addEventListener("click", async () => {
-	let categorias = await obtener_categorias();
-	let options =
-		'<option style="text-align:center;" value="0">Seleccione una categoria</option>';
-	for (const iterator of categorias) {
-		options += `<option value="${iterator.id_cat}" style="color:${iterator.color_cat}; font-weight:bold; text-align:center;" >${iterator.nombre_cat} </option>`;
-	}
-
-	Swal.fire({
-		title: "Eliminar categoria",
-		html: `<select id="categoria" class="form-control">
-    ${options}
-    </select> 
-  <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
-  <label class="form-check-label" for="flexSwitchCheckDefault">Eliminar notas de la categoria</label>`,
-		focusConfirm: false,
-		confirmButtonText: "Eliminar",
-		confirmButtonColor: "#d33",
-		confirmButtonAriaLabel: "Thumbs up, great!",
-		preConfirm: () => {
-			return [
-				document.getElementById("categoria").value,
-				document.getElementById("flexSwitchCheckDefault").checked,
-			];
-		},
-	}).then((result) => {
-		//console.log(result.value);
-		if (result.value && result.value != 0) {
-			let data = new FormData();
-			data.append("id_categoria", result.value[0]);
-			data.append("eliminar_notas_cat", result.value[1]);
-
-			let respuesta = fetch(BaseUrl + "inicio/eliminar_categoria", {
-				method: "POST", // or 'PUT'
-				body: data, // data can be `string` or {object}!
-				mode: "no-cors",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
-
-			tata.success("Realizado", "Se elimino la nota", {
-				position: "tm",
-				animate: "slide",
-				duration: 2000,
-			});
-
-			llenar_categorias();
-		}
-	});
-});

@@ -61,6 +61,26 @@ var elemento_lista = (titulo, fecha, descripcion, id_nota, color_cat,efecto="nad
 </div>`;
 };
 
+let actulist=async()=>{
+
+	const respuesta = await fetch("https://bdtest-5ff29-default-rtdb.firebaseio.com/nombre_de_tu_coleccion.json");
+	if (respuesta.status === 200) {
+		let datoss = await respuesta.json();
+		console.log(datoss);
+		json_notas = datoss;
+		if (Object.keys(datoss).length == 0) {
+			//console.log("vacio");
+			Lista.insertAdjacentHTML(
+				"beforeend",
+				`<div class="fs-1" id="nohay">No hay notas</div>`
+			);
+		}
+		//console.log(datoss);
+	}
+}
+
+
+
 var json_notas = "";
 const hacer_peticion = async () => {
 	while (Lista.firstChild) {
@@ -72,8 +92,8 @@ const hacer_peticion = async () => {
 			let datoss = await respuesta.json();
             console.log(datoss);
 			json_notas = datoss;
-			if (Object.keys(datoss).length == 0) {
-				//console.log("vacio");
+			if (Object.keys(json_notas).length == 0 || datoss==undefined) {
+				console.log("vacio");
 				Lista.insertAdjacentHTML(
 					"beforeend",
 					`<div class="fs-1" id="nohay">No hay notas</div>`
@@ -95,7 +115,7 @@ const hacer_peticion = async () => {
 						 	? datoss[elemento].descripcion.substr(0, 200) + ". . ."
 						 	: datoss[elemento].descripcion,
 						elemento,
-						"sin cat"
+						datoss[elemento].color
 						// elemento.dia_nota +
 						// 	" " +
 						// 	elemento.numero_dia_nota +
@@ -180,10 +200,10 @@ var funcion_borrar = async (id_nota) => {
 	let post_id = new FormData();
 	post_id.append("id_nota", id_nota);
 	try {
-		const respuesta = await fetch(BaseUrl + "inicio/actualizar_nota_borrado", {
-			method: "POST", // or 'PUT'
-			body: post_id, // data can be `string` or {object}!
-			mode: "no-cors",
+		const respuesta = await fetch(`https://bdtest-5ff29-default-rtdb.firebaseio.com/nombre_de_tu_coleccion/${id_nota}.json`, {
+			method: "DELETE", // or 'PUT'
+			// body: post_id, // data can be `string` or {object}!
+			//mode: "no-cors",
 			headers: {
 				"Content-Type": "application/json",
 			},
@@ -231,6 +251,7 @@ function obtenerFechaHora() {
     return `${horas}:${minutos}:${segundos}`;
   }
 
+  var unot="";
 let guardar_nota = async () => {
 	
 
@@ -268,19 +289,22 @@ let guardar_nota = async () => {
 				duration: 2000,
 			});
 				
-			let ultimanota = await respuesta.json();
-			json_notas.push(ultimanota);
+			 let ultimanota = await respuesta.json();
+			 unot=ultimanota;
+			// console.log(ultimanota.);
+			// json_notas.push(ultimanota);
 			Lista.insertAdjacentHTML(
 				"afterbegin",
 				elemento_lista(
-					ultimanota.titulo_nota,
-					ultimanota.dia_nota +  " " + ultimanota.numero_dia_nota + " de " + ultimanota.mes_nota + " del " + ultimanota.anyo_nota,
-					ultimanota.descripcion_nota.length > 200 ? ultimanota.descripcion_nota.substr(0, 200) + ". . ." : ultimanota.descripcion_nota,
-					ultimanota.id_nota,
+					titulo,
+					fechactual,
+					descripcion,
+					ultimanota.name,
 					null,
 					"efecto"
 				)
 			);
+			actulist();
 			borrar_formulario();
 		}
 	} catch (error) {
@@ -293,23 +317,29 @@ let guardar_nota = async () => {
 };
 
 let actualizar_nota = async (id_nota_actual) => {
-	let postData = new FormData();
+	
 
 	let descripcion = document.querySelector("#descripcion").value;
 	let titulo = document.querySelector("#titulo").value;
-	postData.append("id_nota", id_nota_actual);
-	postData.append("titulo_nota", titulo);
-	postData.append("descripcion_nota", descripcion);
+	
 	try {
-		const respuesta = await fetch(BaseUrl + "inicio/actualizar_nota", {
-			method: "POST", // or 'PUT'
-			body: postData, // data can be `string` or {object}!
-			mode: "no-cors",
+		const respuesta = await fetch(`https://bdtest-5ff29-default-rtdb.firebaseio.com/nombre_de_tu_coleccion/${id_nota_actual}.json`, {
+			method: "PUT", // or 'PUT'
+			body:JSON.stringify({
+				fecha:fechactual,
+				hora: obtenerFechaHora(),
+				titulo: titulo,
+				descripcion:descripcion
+			   
+			  
+		  }) , // data can be `string` or {object}!
+		  //mode: "no-cors",
 			headers: {
 				"Content-Type": "application/json",
 			},
 		});
 		if (respuesta.status === 200) {
+			actulist();
 			tata.info("Actualizada", "Nota actualizada", {
 				position: "tr",
 				animate: "slide",
@@ -555,44 +585,42 @@ let buscar = (texto) => {
 		Lista.removeChild(Lista.firstChild);
 	}
 
-	for (let nota of json_notas) {
-		//console.log('de lista='+nota)
+	for (let nota in json_notas) {
+		console.log(json_notas[nota.toString()].fecha);
 
+		
 		if (
-			nota.descripcion_nota.match(new RegExp(texto, "i")) ||
-			nota.titulo_nota.match(new RegExp(texto, "i"))
-		) {
-			//console.log('coincide='+nota.descripcion_nota +'su id='+nota.id_nota)
+			json_notas[nota.toString()].descripcion.match(new RegExp(texto, "i")) ||
+			json_notas[nota.toString()].titulo.match(new RegExp(texto, "i"))
+		)
 
-			//nota.descripcion_nota=nota.descripcion_nota.replace(texto,`<mark>${texto}</mark>`)
-
-			Lista.insertAdjacentHTML(
-				"beforeend",
-
-				elemento_lista(
-					nota.titulo_nota,
-					nota.dia_nota +
-						" " +
-						nota.numero_dia_nota +
-						" de " +
-						nota.mes_nota +
-						" del " +
-						nota.anyo_nota,
-					nota.descripcion_nota.length > 200
-						? (nota.descripcion_nota.substr(0, 200) + ". . .").replace(
-								new RegExp(texto, "i"),
-								`<mark>${texto}</mark>`
-						  )
-						: nota.descripcion_nota.replace(
-								new RegExp(texto, "i"),
-								`<mark>${texto}</mark>`
-						  ),
-					nota.id_nota,
-					nota.color_cat
-				)
-			);
-		}
+		Lista.insertAdjacentHTML(
+			"beforeend",
+			elemento_lista(
+				json_notas[nota.toString()].titulo,
+				json_notas[nota.toString()].fecha,
+				json_notas[nota.toString()].descripcion.length > 200
+					 ? json_notas[nota.toString()].descripcion.substr(0, 200) + ". . ."
+					 : json_notas[nota.toString()].descripcion,
+				nota,
+				json_notas[nota.toString()].color,
+				// elemento.dia_nota +
+				// 	" " +
+				// 	elemento.numero_dia_nota +
+				// 	" de " +
+				// 	elemento.mes_nota +
+				// 	" del " +
+				// 	elemento.anyo_nota,
+				// elemento.descripcion_nota.length > 200
+				// 	? elemento.descripcion_nota.substr(0, 200) + ". . ."
+				// 	: elemento.descripcion_nota,
+				// elemento.id_nota,
+				// elemento.color_cat
+			)
+		);
 	}
+
+
 	//console.log(Lista.hasChildNodes());
 	Lista.hasChildNodes() == false
 		? Lista.insertAdjacentHTML(
@@ -611,26 +639,40 @@ bus.addEventListener("keyup", function (e) {
 		while (Lista.firstChild) {
 			Lista.removeChild(Lista.firstChild);
 		}
-		for (let elemento of json_notas) {
-			Lista.insertAdjacentHTML(
-				"beforeend",
-				elemento_lista(
-					elemento.titulo_nota,
-					elemento.dia_nota +
-						" " +
-						elemento.numero_dia_nota +
-						" de " +
-						elemento.mes_nota +
-						" del " +
-						elemento.anyo_nota,
-					elemento.descripcion_nota.length > 200
-						? elemento.descripcion_nota.substr(0, 200) + ". . ."
-						: elemento.descripcion_nota,
-					elemento.id_nota,
-					elemento.color_cat
-				)
-			);
-		}
+		for (let nota in json_notas) {
+		console.log(json_notas[nota.toString()].fecha);
+
+		
+		// if (
+		// 	json_notas[nota.toString()].descripcion.match(new RegExp(texto, "i")) ||
+		// 	json_notas[nota.toString()].titulo.match(new RegExp(texto, "i"))
+		// )
+
+		Lista.insertAdjacentHTML(
+			"beforeend",
+			elemento_lista(
+				json_notas[nota.toString()].titulo,
+				json_notas[nota.toString()].fecha,
+				json_notas[nota.toString()].descripcion.length > 200
+					 ? json_notas[nota.toString()].descripcion.substr(0, 200) + ". . ."
+					 : json_notas[nota.toString()].descripcion,
+				nota,
+				json_notas[nota.toString()].color,
+				// elemento.dia_nota +
+				// 	" " +
+				// 	elemento.numero_dia_nota +
+				// 	" de " +
+				// 	elemento.mes_nota +
+				// 	" del " +
+				// 	elemento.anyo_nota,
+				// elemento.descripcion_nota.length > 200
+				// 	? elemento.descripcion_nota.substr(0, 200) + ". . ."
+				// 	: elemento.descripcion_nota,
+				// elemento.id_nota,
+				// elemento.color_cat
+			)
+		);
+	}
 	}
 });
 
@@ -711,48 +753,46 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 });
 
 const descargar_nota_txt = (id) => {
-	let nota = json_notas.find((obj) => obj.id_nota == id);
-	//console.log(nota);
+	//let nota = json_notas.find((obj) => obj.id_nota == id);
+	let nota = Object.keys(json_notas).find((obj) => obj == id);
+	console.log(json_notas[nota]);
 	let texto =
 		"Fecha: " +
-		nota.fecha_nota +
+		json_notas[nota].fecha +
 		"\n" +
 		"Titulo: " +
-		nota.titulo_nota +
+		json_notas[nota].titulo +
 		"\n" +
 		"\n" +
-		nota.descripcion_nota;
+		json_notas[nota].descripcion;
 	const a = document.createElement("a");
 	const archivo = new Blob([texto], { type: "text/plain" });
 	const url = URL.createObjectURL(archivo);
 	a.href = url;
-	a.download = nota.titulo_nota + ".txt";
+	a.download = json_notas[nota].titulo + ".txt";
 	a.click();
 	URL.revokeObjectURL(url);
 };
 
-let descargar_pdf = async (id) => {
-	let nota = json_notas.find((obj) => obj.id_nota == id);
-	let data = new FormData();
-	data.append("titulo", nota.titulo_nota);
-	data.append("descripcion", nota.descripcion_nota);
-	data.append("fecha", nota.fecha_nota);
-	let respuesta = await fetch(BaseUrl + "inicio/crearpdf", {
-		method: "POST", // or 'PUT'
-		body: data, // data can be `string` or {object}!
-		mode: "no-cors",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	});
-	if (respuesta.status === 200) {
-		let url = await respuesta.blob();
-		let url_pdf = URL.createObjectURL(url);
-		let a = document.createElement("a");
-		a.href = url_pdf;
-		a.download = nota.titulo_nota + ".pdf";
-		a.click();
-		URL.revokeObjectURL(url);
-	}
+const descargar_pdf = (id) => {
+    // Encuentra la nota por ID
+    let nota = Object.keys(json_notas).find((obj) => obj == id);
+    console.log(json_notas[nota]);
+
+    // Crea el contenido del PDF
+    let contenido = 
+        "Fecha: " + json_notas[nota].fecha + "\n" +
+        "Titulo: " + json_notas[nota].titulo + "\n\n" +
+        json_notas[nota].descripcion;
+
+    // Inicializa jsPDF
+	const doc = new jsPDF.jsPDF();
+
+    // Añade texto al documento
+    doc.text(contenido, 10, 10);
+
+    // Guarda el documento
+    doc.save(json_notas[nota].titulo + '.pdf');
 };
+
 

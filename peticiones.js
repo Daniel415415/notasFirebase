@@ -1,3 +1,40 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+  // Configuración de tu aplicación web de Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDtUMaq7YAGynxY7vs3p4wccX_9tiCPZQg",
+    authDomain: "bdtest-5ff29.firebaseapp.com",
+    databaseURL: "https://bdtest-5ff29-default-rtdb.firebaseio.com",
+    projectId: "bdtest-5ff29",
+    storageBucket: "bdtest-5ff29.appspot.com",
+    messagingSenderId: "419949323955",
+    appId: "1:419949323955:web:fcf88186502f14ecd432c6",
+    measurementId: "G-76T7D8X2CB"
+  };
+
+  // Inicializa Firebase
+  const app = initializeApp(firebaseConfig);
+  const database = getDatabase(app);
+
+  // Función para ingresar un turno
+  function ingresarTurno(usuarioId, fecha, hora, estado) {
+    const turnoId = 'turno' + Date.now(); // Genera un ID único para el turno
+    set(ref(database, 'turnos/' + turnoId), {
+      usuarioId: usuarioId,
+      fecha: fecha,
+      hora: hora,
+      estado: estado
+    });
+  }
+
+  // Ejemplo de cómo usar la función
+  ingresarTurno('usuario123', '2024-04-16', '16:00', 'pendiente');
+
+
+
+
+
 var BaseUrl = document.querySelector("body").getAttribute("url");
 var datos = "";
 var btn_guardar = document.querySelector("#agregar");

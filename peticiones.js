@@ -17,6 +17,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
 
+  const notasRef = ref(database, 'nombre_de_tu_coleccion/');
+
+  onValue(notasRef, (snapshot) => {
+	const data = snapshot.val();
+	console.log(data);
+  });
+
+
+
+
   // Función para ingresar un turno
   function ingresarTurno(usuarioId, fecha, hora, estado) {
     const turnoId = 'turno' + Date.now(); // Genera un ID único para el turno
